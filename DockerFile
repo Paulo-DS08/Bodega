@@ -1,6 +1,16 @@
-FROM eclipse-temurin:21-jdk-alpine
+# Etapa 1: Compilación (Build)
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
-# Esto busca el archivo .jar dentro de la carpeta target que ya tienes ahí
-COPY target/*.jar app.jar
+# Copiamos el pom.xml y el código fuente
+COPY pom.xml .
+COPY src ./src
+# Compilamos el proyecto saltando los tests para ir más rápido
+RUN mvn clean package -DskipTests
+
+# Etapa 2: Ejecución (Run)
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+# Aquí copiamos el archivo generado en la etapa anterior
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8083
 ENTRYPOINT ["java", "-jar", "app.jar"]
